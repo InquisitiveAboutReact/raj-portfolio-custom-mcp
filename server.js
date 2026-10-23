@@ -1,5 +1,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const PORTFOLIO_DATA = {
   profile: {
@@ -29,24 +30,40 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
-// Register tools
-server.tool("get_candidate_profile", {}, async () => [
-  { type: "text", text: JSON.stringify(PORTFOLIO_DATA.profile, null, 2) }
-]);
+// ✅ Use addTool instead of tool
+server.addTool({
+  name: "get_candidate_profile",
+  description: "Returns executive summary of Raja Chatterjee",
+  inputSchema: { type: "object", properties: {} },
+  handler: async () => {
+    return [{ type: "text", text: JSON.stringify(PORTFOLIO_DATA.profile, null, 2) }];
+  }
+});
 
-server.tool("get_certifications", {}, async () => [
-  { type: "text", text: JSON.stringify(PORTFOLIO_DATA.certifications, null, 2) }
-]);
+server.addTool({
+  name: "get_certifications",
+  description: "Retrieves list of verified technical & AI certifications",
+  inputSchema: { type: "object", properties: {} },
+  handler: async () => {
+    return [{ type: "text", text: JSON.stringify(PORTFOLIO_DATA.certifications, null, 2) }];
+  }
+});
 
-server.tool("query_skills_and_projects",
-  { keyword: { type: "string", description: "Skill or domain keyword" } },
-  async ({ keyword }) => {
+server.addTool({
+  name: "query_skills_and_projects",
+  description: "Searches candidate skills and architectural focus areas",
+  inputSchema: {
+    type: "object",
+    properties: { keyword: { type: "string", description: "Skill or domain keyword" } },
+    required: ["keyword"]
+  },
+  handler: async ({ keyword }) => {
     const matchedSkills = PORTFOLIO_DATA.skills.filter(s =>
       s.toLowerCase().includes(keyword.toLowerCase())
     );
     return [{ type: "text", text: JSON.stringify({ query: keyword, matchedSkills }, null, 2) }];
   }
-);
+});
 
 const transport = new StdioServerTransport();
 server.connect(transport);
