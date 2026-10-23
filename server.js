@@ -29,7 +29,17 @@ const PORTFOLIO_DATA = {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Factory function to instantiate an MCP Server instance per client session
+// Enable CORS for all incoming client connections
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
+
 function createMcpServer() {
   const mcpServer = new Server(
     {
@@ -43,7 +53,6 @@ function createMcpServer() {
     }
   );
 
-  // List available portfolio tools
   mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [
       {
@@ -70,7 +79,6 @@ function createMcpServer() {
     ],
   }));
 
-  // Handle execution of portfolio tools
   mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
     const toolName = request.params.name;
     const args = request.params.arguments || {};
@@ -108,10 +116,8 @@ function createMcpServer() {
   return mcpServer;
 }
 
-// Active SSE Transports lookup map
 const transports = {};
 
-// Root welcome/health landing endpoint
 app.get("/", (req, res) => {
   res.status(200).send("Raja Chatterjee MCP Server is running live!");
 });
@@ -130,7 +136,12 @@ app.get("/sse", async (req, res) => {
   await mcpServer.connect(transport);
 });
 
-// Message POST endpoint for SSE client-to-server calls
+// Reject Streamable HTTP probe attempts safely so clients fall back directly to SSE
+app.post("/sse", (req, res) => {
+  res.status(405).send("Method Not Allowed. Use GET /sse for SSE connections.");
+});
+
+// Raw body parser for /messages so the transport handles post body streams safely
 app.post("/messages", express.json(), async (req, res) => {
   const sessionId = req.query.sessionId;
   const transport = transports[sessionId];
