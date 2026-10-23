@@ -29,7 +29,7 @@ const PORTFOLIO_DATA = {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Enable CORS for all incoming client connections
+// Enable CORS
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -136,13 +136,13 @@ app.get("/sse", async (req, res) => {
   await mcpServer.connect(transport);
 });
 
-// Reject Streamable HTTP probe attempts safely so clients fall back directly to SSE
+// Reject Streamable HTTP probes cleanly so clients fall back directly to SSE
 app.post("/sse", (req, res) => {
   res.status(405).send("Method Not Allowed. Use GET /sse for SSE connections.");
 });
 
-// Raw body parser for /messages so the transport handles post body streams safely
-app.post("/messages", express.json(), async (req, res) => {
+// ✅ KEY FIX: Do NOT use express.json() here. Pass raw request stream directly to handlePostMessage.
+app.post("/messages", async (req, res) => {
   const sessionId = req.query.sessionId;
   const transport = transports[sessionId];
 
