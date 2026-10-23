@@ -1,6 +1,5 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const PORTFOLIO_DATA = {
   profile: {
@@ -30,11 +29,11 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
-// ✅ Use addTool instead of tool
+// ✅ Use the CORRECT method: addTool (not tool)
 server.addTool({
   name: "get_candidate_profile",
   description: "Returns executive summary of Raja Chatterjee",
-  inputSchema: { type: "object", properties: {} },
+  inputSchema: { type: "object", properties: {}, required: [] },
   handler: async () => {
     return [{ type: "text", text: JSON.stringify(PORTFOLIO_DATA.profile, null, 2) }];
   }
@@ -43,7 +42,7 @@ server.addTool({
 server.addTool({
   name: "get_certifications",
   description: "Retrieves list of verified technical & AI certifications",
-  inputSchema: { type: "object", properties: {} },
+  inputSchema: { type: "object", properties: {}, required: [] },
   handler: async () => {
     return [{ type: "text", text: JSON.stringify(PORTFOLIO_DATA.certifications, null, 2) }];
   }
