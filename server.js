@@ -30,53 +30,53 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
-// ✅ Official SDK tool registration
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return {
-    tools: [
-      {
-        name: "get_candidate_profile",
-        description: "Returns executive summary of Raja Chatterjee",
-        inputSchema: { type: "object", properties: {}, required: [] }
-      },
-      {
-        name: "get_certifications",
-        description: "Retrieves list of verified technical & AI certifications",
-        inputSchema: { type: "object", properties: {}, required: [] }
-      },
-      {
-        name: "query_skills_and_projects",
-        description: "Searches candidate skills and architectural focus areas",
-        inputSchema: {
-          type: "object",
-          properties: { keyword: { type: "string", description: "Skill or domain keyword" } },
-          required: ["keyword"]
-        }
+// ✅ TOOLS LIST HANDLER
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    {
+      name: "get_candidate_profile",
+      description: "Returns executive summary of Raja Chatterjee",
+      inputSchema: { type: "object", properties: {}, required: [] }
+    },
+    {
+      name: "get_certifications",
+      description: "Retrieves list of verified technical & AI certifications",
+      inputSchema: { type: "object", properties: {}, required: [] }
+    },
+    {
+      name: "query_skills_and_projects",
+      description: "Searches candidate skills and architectural focus areas",
+      inputSchema: {
+        type: "object",
+        properties: { keyword: { type: "string", description: "Skill or domain keyword" } },
+        required: ["keyword"]
       }
-    ]
-  };
-});
+    }
+  ]
+}));
 
+// ✅ TOOL CALL HANDLER
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   if (name === "get_candidate_profile") {
     return { content: [{ type: "text", text: JSON.stringify(PORTFOLIO_DATA.profile, null, 2) }] };
-  } else if (name === "get_certifications") {
+  }
+  if (name === "get_certifications") {
     return { content: [{ type: "text", text: JSON.stringify(PORTFOLIO_DATA.certifications, null, 2) }] };
-  } else if (name === "query_skills_and_projects") {
+  }
+  if (name === "query_skills_and_projects") {
     const keyword = (args?.keyword || "").toLowerCase();
     const matchedSkills = PORTFOLIO_DATA.skills.filter(s => s.toLowerCase().includes(keyword));
     return { content: [{ type: "text", text: JSON.stringify({ query: args?.keyword, matchedSkills }, null, 2) }] };
   }
 
-  throw new Error(`Tool not found: ${name}`);
+  throw new Error(`Unknown tool: ${name}`);
 });
 
-// ✅ Use HTTP transport (handles SSE + POST automatically)
+// ✅ START SERVER
 const transport = new HttpServerTransport({
   port: parseInt(process.env.PORT || "3000"),
   host: "0.0.0.0"
 });
-
 server.connect(transport);
