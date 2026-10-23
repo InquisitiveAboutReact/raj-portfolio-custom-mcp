@@ -37,10 +37,10 @@ app.use((req, res, next) => {
 });
 
 // Handle OPTIONS
-app.options("*", (req, res) => res.status(204).end());
+app.options("/api/mcp", (req, res) => res.status(204).end());
 
-// ✅ Handle GET for initial handshake (REQUIRED FOR CURSOR)
-app.get("/", (req, res) => {
+// ✅ Handle GET for /api/mcp (SSE handshake)
+app.get("/api/mcp", (req, res) => {
   res.status(200).json({
     jsonrpc: "2.0",
     id: null,
@@ -52,8 +52,8 @@ app.get("/", (req, res) => {
   });
 });
 
-// ✅ Main MCP endpoint
-app.post("/", async (req, res) => {
+// ✅ Main MCP endpoint at /api/mcp
+app.post("/api/mcp", async (req, res) => {
   let body;
   try {
     body = req.body;
