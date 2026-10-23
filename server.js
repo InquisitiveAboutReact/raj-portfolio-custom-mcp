@@ -29,7 +29,7 @@ const PORTFOLIO_DATA = {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Enable CORS
+// Explicit CORS headers
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -40,6 +40,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Factory function to create isolated MCP server instances per session
 function createMcpServer() {
   const mcpServer = new Server(
     {
@@ -118,11 +119,12 @@ function createMcpServer() {
 
 const transports = {};
 
+// Health route
 app.get("/", (req, res) => {
   res.status(200).send("Raja Chatterjee MCP Server is running live!");
 });
 
-// Primary SSE Transport connection endpoint
+// SSE Connection Endpoint
 app.get("/sse", async (req, res) => {
   const transport = new SSEServerTransport("/messages", res);
   const mcpServer = createMcpServer();
@@ -136,12 +138,12 @@ app.get("/sse", async (req, res) => {
   await mcpServer.connect(transport);
 });
 
-// Reject Streamable HTTP probes cleanly so clients fall back directly to SSE
+// Handle POST to /sse safely (Cursor HTTP probe fallback)
 app.post("/sse", (req, res) => {
-  res.status(405).send("Method Not Allowed. Use GET /sse for SSE connections.");
+  res.status(405).send("Method Not Allowed. Connect via GET /sse.");
 });
 
-// ✅ KEY FIX: Do NOT use express.json() here. Pass raw request stream directly to handlePostMessage.
+// Message endpoint: MUST NOT use express.json() middleware or read req body before this handler
 app.post("/messages", async (req, res) => {
   const sessionId = req.query.sessionId;
   const transport = transports[sessionId];
@@ -150,7 +152,14 @@ app.post("/messages", async (req, res) => {
     return res.status(404).json({ error: "Session not found or expired" });
   }
 
-  await transport.handlePostMessage(req, res);
+  try {
+    await transport.handlePostMessage(req, res);
+  } catch (error) {
+    console.error("Error handling POST message:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 });
 
 app.listen(PORT, () => {
