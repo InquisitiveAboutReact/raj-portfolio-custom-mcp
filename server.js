@@ -28,6 +28,23 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware to parse JSON
 app.use(express.json());
+// Handle GET requests for MCP handshake
+app.get("/api/mcp", (req, res) => {
+    res.status(200).json({
+      jsonrpc: "2.0",
+      id: null,
+      result: {
+        protocolVersion: "2024-11-05",
+        capabilities: { tools: {} },
+        serverInfo: { name: "raj-mcp-server", version: "1.0.0" }
+      }
+    });
+  });
+  
+  // Handle root path (prevent "Cannot GET /" error)
+  app.get("/", (req, res) => {
+    res.status(404).json({ error: "Use POST /api/mcp for MCP requests" });
+  });
 
 // CORS headers
 app.use((req, res, next) => {
