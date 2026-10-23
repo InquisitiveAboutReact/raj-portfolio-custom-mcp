@@ -25,11 +25,11 @@ const PORTFOLIO_DATA = {
 };
 
 const server = new Server(
-  { name: "raja-portfolio-mcp", version: "1.0.0" },
+  { name: "raj-mcp-server", version: "1.0.0" },
   { capabilities: { tools: {} } }
 );
 
-// Register your 3 tools
+// Register tools
 server.tool("get_candidate_profile", {}, async () => [
   { type: "text", text: JSON.stringify(PORTFOLIO_DATA.profile, null, 2) }
 ]);
@@ -48,6 +48,5 @@ server.tool("query_skills_and_projects",
   }
 );
 
-// Start server
 const transport = new StdioServerTransport();
 server.connect(transport);
