@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 // Handle OPTIONS
 app.options("/api/mcp", (req, res) => res.status(204).end());
 
-// ✅ Handle GET for /api/mcp (SSE handshake)
+// ✅ CRITICAL: Handle GET for /api/mcp (Cursor's SSE handshake)
 app.get("/api/mcp", (req, res) => {
   res.status(200).json({
     jsonrpc: "2.0",
@@ -52,7 +52,7 @@ app.get("/api/mcp", (req, res) => {
   });
 });
 
-// ✅ Main MCP endpoint at /api/mcp
+// ✅ Main MCP endpoint
 app.post("/api/mcp", async (req, res) => {
   let body;
   try {
@@ -146,6 +146,7 @@ app.post("/api/mcp", async (req, res) => {
   });
 });
 
+// Start server
 app.listen(PORT, () => {
   console.log(`MCP server running on port ${PORT}`);
 });
