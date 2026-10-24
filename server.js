@@ -405,6 +405,8 @@ app.post("/messages", async (req, res) => {
 const jsonBody = express.json({ limit: "1mb" });
 
 app.post("/mcp", jsonBody, async (req, res) => {
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+
   try {
     const sessionId = req.headers["mcp-session-id"];
     let transport;
