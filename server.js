@@ -407,22 +407,6 @@ const jsonBody = express.json({ limit: "1mb" });
 app.post("/mcp", jsonBody, async (req, res) => {
   res.setHeader("Cache-Control", "no-cache, no-transform");
 
-  // Experiment: buffer the reply and send it with a fixed Content-Length
-  // instead of chunked framing, which the proxy is mangling.
-  const chunks = [];
-  const originalWrite = res.write.bind(res);
-  const originalEnd = res.end.bind(res);
-  res.write = (chunk, ...args) => {
-    if (chunk) chunks.push(Buffer.from(chunk));
-    return true;
-  };
-  res.end = (chunk, ...args) => {
-    if (chunk) chunks.push(Buffer.from(chunk));
-    const body = Buffer.concat(chunks);
-    if (!res.headersSent) res.setHeader("Content-Length", body.length);
-    return originalEnd(body);
-  };
-
   try {
     const sessionId = req.headers["mcp-session-id"];
     let transport;
@@ -438,10 +422,11 @@ app.post("/mcp", jsonBody, async (req, res) => {
       }
       transport = session.transport;
     } else if (isInitializeRequest(req.body)) {
+      // New session: create a transport and server, then register the session once initialized.
       const server = createMcpServer();
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
-        enableJsonResponse: true,
+        enableJsonResponse: true, // send replies as plain JSON, not an event stream
         onsessioninitialized: (id) => {
           httpSessions.set(id, { transport, server });
         },
