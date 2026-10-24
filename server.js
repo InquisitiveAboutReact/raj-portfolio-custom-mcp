@@ -424,6 +424,7 @@ app.post("/mcp", jsonBody, async (req, res) => {
       const server = createMcpServer();
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
+        enableJsonResponse: true, // send replies as plain JSON, not an event stream
         onsessioninitialized: (id) => {
           httpSessions.set(id, { transport, server });
         },
